@@ -42,5 +42,5 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 		Message: fmt.Sprintf("User %v authenticated successfully", requestPayload.Email),
 		Data:    u,
 	}
-	_ = app.writeJSON(w, http.StatusOK, response)
+	_ = app.writeJSON(w, http.StatusAccepted, response)
 }

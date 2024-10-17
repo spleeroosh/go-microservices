@@ -54,7 +54,7 @@ func (app *Config) writeJSON(w http.ResponseWriter, status int, data any, header
 	return nil
 }
 
-func (app *Config) errorJson(w http.ResponseWriter, err error, status ...int) error {
+func (app *Config) errorJSON(w http.ResponseWriter, err error, status ...int) error {
 	statusCode := http.StatusBadRequest
 
 	if len(status) > 0 {
