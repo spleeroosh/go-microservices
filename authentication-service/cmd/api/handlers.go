@@ -30,7 +30,7 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := app.Models.User.PasswordMatches(u.Password)
+	ok, err := u.PasswordMatches(requestPayload.Password)
 	if err != nil || !ok {
 		log.Println("Authentication failed for user:", requestPayload.Email)
 		_ = app.errorJSON(w, errors.New("invalid email or password"), http.StatusBadRequest)
