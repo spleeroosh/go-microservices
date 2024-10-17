@@ -1,0 +1,16 @@
+.git
+.gitignore
+.dockerignore
+.gitlab-ci.yml
+.ops
+!.ops/docker/nginx-templates
+docker-compose*
+compose.override.yaml
+# composer.lock
+phpca-config.php
+var/
+vendor/
+public/bundles/
+Makefile
+README.md
+.npmrc
