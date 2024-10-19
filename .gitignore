@@ -33,6 +33,7 @@ coverage
 
 # Игнорировать все бинарные файлы без расширений
 authenticationApp
+loggerApp
 brokerApp
 frontApp
 

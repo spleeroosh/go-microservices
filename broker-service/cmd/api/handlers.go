@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 )
 
@@ -70,14 +71,32 @@ func (app *Config) log(w http.ResponseWriter, l LogPayload) {
 		_ = app.errorJSON(w, err)
 		return
 	}
+	defer response.Body.Close()
+
+	log.Println(response.StatusCode)
 
 	if response.StatusCode != http.StatusAccepted {
 		_ = app.errorJSON(w, errors.New("Error calling log service"))
+		return
+	}
+
+	var jsonFromService jsonRespone
+
+	err = json.NewDecoder(response.Body).Decode(&jsonFromService)
+	if err != nil {
+		_ = app.errorJSON(w, err)
+		return
+	}
+
+	if jsonFromService.Error {
+		_ = app.errorJSON(w, err, http.StatusInternalServerError)
+		return
 	}
 
 	var payload jsonRespone
 	payload.Error = false
 	payload.Message = "logged"
+	payload.Data = jsonFromService.Data
 
 	_ = app.writeJSON(w, http.StatusAccepted, payload)
 }
