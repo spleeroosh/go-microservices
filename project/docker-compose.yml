@@ -44,6 +44,26 @@ services:
       mode: replicated
       replicas: 1
 
+  mailer-service:
+    build:
+      context: ./../mailer-service
+      dockerfile: ./../mailer-service/mailer-service.dockerfile
+    restart: always
+    ports:
+      - "0.0.0.0:8084:80"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      MAIL_DOMAIN: ""
+      MAIL_HOST: ""
+      MAIL_PORT: ""
+      MAIL_USERNAME: "admin"
+      MAIL_PASSWORD: "password"
+      MAIL_ENCRYPTION: "tls"
+      FROM_NAME: "Google"
+      FROM_ADDRESS: "California"
+
   logger-service:
     build:
       context: ./../logger-service

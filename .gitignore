@@ -36,6 +36,7 @@ authenticationApp
 loggerApp
 brokerApp
 frontApp
+mailerApp
 
 .env
 Dockerfile.target
