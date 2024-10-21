@@ -49,20 +49,18 @@ services:
       context: ./../mailer-service
       dockerfile: ./../mailer-service/mailer-service.dockerfile
     restart: always
-    ports:
-      - "0.0.0.0:8084:80"
     deploy:
       mode: replicated
       replicas: 1
     environment:
-      MAIL_DOMAIN: ""
-      MAIL_HOST: ""
-      MAIL_PORT: ""
-      MAIL_USERNAME: "admin"
-      MAIL_PASSWORD: "password"
-      MAIL_ENCRYPTION: "tls"
-      FROM_NAME: "Google"
-      FROM_ADDRESS: "California"
+      MAIL_DOMAIN: localhost
+      MAIL_HOST: mailhog           # используем имя контейнера MailHog
+      MAIL_PORT: 1025              # порт SMTP MailHog
+      MAIL_USERNAME: ""
+      MAIL_PASSWORD: ""
+      MAIL_ENCRYPTION: none             # MailHog не требует шифрования
+      FROM_NAME: "Pavel"
+      FROM_ADDRESS: "rogovin.pavel@example.com"
 
   logger-service:
     build:
