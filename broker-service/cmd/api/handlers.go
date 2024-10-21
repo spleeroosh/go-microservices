@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 )
 
@@ -12,6 +11,7 @@ type RequestPayload struct {
 	Action string      `json:"action"`
 	Auth   AuthPayload `json:"auth,omitempty"`
 	Log    LogPayload  `json:"log,omitempty"`
+	Mail   MailPayload `json:"message,omitempty"`
 }
 
 type AuthPayload struct {
@@ -22,6 +22,13 @@ type AuthPayload struct {
 type LogPayload struct {
 	Name string `json:"name"`
 	Data string `json:"data"`
+}
+
+type MailPayload struct {
+	From    string `json:"from"`
+	To      string `json:"to"`
+	Subject string `json:"subject"`
+	Message string `json:"message"`
 }
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
@@ -47,6 +54,8 @@ func (app *Config) Handle(w http.ResponseWriter, r *http.Request) {
 		app.authenticate(w, payload.Auth)
 	case "log":
 		app.log(w, payload.Log)
+	case "mail":
+		app.sendMail(w, payload.Mail)
 	default:
 		_ = app.errorJSON(w, errors.New("Invalid action"))
 	}
@@ -73,32 +82,12 @@ func (app *Config) log(w http.ResponseWriter, l LogPayload) {
 	}
 	defer response.Body.Close()
 
-	log.Println(response.StatusCode)
-
 	if response.StatusCode != http.StatusAccepted {
 		_ = app.errorJSON(w, errors.New("Error calling log service"))
 		return
 	}
 
-	var jsonFromService jsonRespone
-
-	err = json.NewDecoder(response.Body).Decode(&jsonFromService)
-	if err != nil {
-		_ = app.errorJSON(w, err)
-		return
-	}
-
-	if jsonFromService.Error {
-		_ = app.errorJSON(w, err, http.StatusInternalServerError)
-		return
-	}
-
-	var payload jsonRespone
-	payload.Error = false
-	payload.Message = "logged"
-	payload.Data = jsonFromService.Data
-
-	_ = app.writeJSON(w, http.StatusAccepted, payload)
+	app.sendResponseFromService(w, response, "Logged")
 }
 
 func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
@@ -130,22 +119,55 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 		return
 	}
 
+	app.sendResponseFromService(w, response, "Authenticated")
+}
+
+func (app *Config) sendMail(w http.ResponseWriter, m MailPayload) {
+	jsonData, err := json.MarshalIndent(m, "", "\t")
+	if err != nil {
+		_ = app.errorJSON(w, err)
+		return
+	}
+	logUrl := "http://mailer-service/send"
+	request, err := http.NewRequest("POST", logUrl, bytes.NewBuffer(jsonData))
+	if err != nil {
+		_ = app.errorJSON(w, err)
+		return
+	}
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		_ = app.errorJSON(w, err)
+		return
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusAccepted {
+		_ = app.errorJSON(w, errors.New("Error calling mail service"))
+		return
+	}
+
+	app.sendResponseFromService(w, response, "Message is sent")
+}
+
+func (app *Config) sendResponseFromService(w http.ResponseWriter, r *http.Response, message string) {
 	var jsonFromService jsonRespone
 
-	err = json.NewDecoder(response.Body).Decode(&jsonFromService)
+	err := json.NewDecoder(r.Body).Decode(&jsonFromService)
 	if err != nil {
 		_ = app.errorJSON(w, err)
 		return
 	}
 
 	if jsonFromService.Error {
-		_ = app.errorJSON(w, err, http.StatusUnauthorized)
+		_ = app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	var payload jsonRespone
 	payload.Error = false
-	payload.Message = "Authenticated"
+	payload.Message = message
 	payload.Data = jsonFromService.Data
 
 	_ = app.writeJSON(w, http.StatusAccepted, payload)
